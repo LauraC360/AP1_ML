@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.tree import DecisionTreeRegressor, export_graphviz
 import graphviz
 
@@ -16,8 +16,13 @@ def preprocess_data(train_file_path, test_file_path):
     test_data = test_data.dropna()
     test_data = test_data[(test_data['Data'].dt.month == 12) & (test_data['Data'].dt.year == 2024)]
 
-    features = ['Consum[MW]', 'Productie[MW]', 'Carbune[MW]', 'Hidrocarburi[MW]', 'Ape[MW]',
-                'Nuclear[MW]', 'Eolian[MW]', 'Foto[MW]', 'Biomasa[MW]']
+    # Feature Engineering: Adding new features
+    train_data['Intermittent[MW]'] = train_data['Eolian[MW]'] + train_data['Foto[MW]']
+    train_data['Constant[MW]'] = train_data['Nuclear[MW]'] + train_data['Carbune[MW]'] + train_data['Hidrocarburi[MW]']
+    test_data['Intermittent[MW]'] = test_data['Eolian[MW]'] + test_data['Foto[MW]']
+    test_data['Constant[MW]'] = test_data['Nuclear[MW]'] + test_data['Carbune[MW]'] + test_data['Hidrocarburi[MW]']
+
+    features = ['Consum[MW]', 'Productie[MW]', 'Intermittent[MW]', 'Constant[MW]', 'Ape[MW]', 'Biomasa[MW]']
     X_train = train_data[features]
     y_train = train_data['Sold[MW]']
     X_test = test_data[features]
@@ -32,9 +37,9 @@ def preprocess_data(train_file_path, test_file_path):
 
 def train_id3(X_train, y_train):
     param_grid = {
-        'max_depth': [3, 5, 7, 10],
-        'min_samples_split': [2, 5, 10],
-        'min_samples_leaf': [1, 2, 5]
+        'max_depth': [3, 5, 7, 10, 15],
+        'min_samples_split': [2, 5, 10, 20],
+        'min_samples_leaf': [1, 2, 5, 10]
     }
     model = DecisionTreeRegressor(criterion='squared_error')
     grid_search = GridSearchCV(model, param_grid, cv=5, scoring='neg_mean_squared_error')
@@ -52,22 +57,6 @@ def visualize_tree(model, feature_names):
     graph.render("tree")
     return graph
 
-def calculate_accuracy(y_true, y_pred, tolerance=0.1):
-    """
-    Calculate the accuracy of predictions within a certain tolerance.
-
-    Parameters:
-    y_true (array-like): True values.
-    y_pred (array-like): Predicted values.
-    tolerance (float): Tolerance within which a prediction is considered accurate.
-
-    Returns:
-    float: Accuracy score.
-    """
-    accurate_predictions = np.abs(y_true - y_pred) <= tolerance * np.abs(y_true)
-    accuracy = np.mean(accurate_predictions)
-    return accuracy
-
 if __name__ == "__main__":
     train_file_path = 'data/daily_data.csv'
     test_file_path = 'data/daily_december_2024.csv'
@@ -82,18 +71,13 @@ if __name__ == "__main__":
     predictions = model.predict(X_test)
     rmse = np.sqrt(mean_squared_error(y_test, predictions))
     mae = mean_absolute_error(y_test, predictions)
-    r2 = r2_score(y_test, predictions)
-    print(f"RMSE: {rmse:.2f}, MAE: {mae:.2f}, R²: {r2:.2f}")
+    print(f"RMSE: {rmse:.2f}, MAE: {mae:.2f}")
 
     # Save the ID3 results to the comparison results file
     try:
         df = pd.read_csv(comparison_results_path, index_col=0)
     except FileNotFoundError:
-        df = pd.DataFrame(index=['RMSE', 'MAE', 'R²'])
+        df = pd.DataFrame(index=['RMSE', 'MAE'])
 
-        # Ensure the index has the correct length
-    if len(df.index) != 3:
-        df = df.reindex(['RMSE', 'MAE', 'R²'])
-
-    df['ID3_var2'] = [rmse, mae, r2]
+    df['ID3_var4'] = [rmse, mae]
     df.to_csv(comparison_results_path)
