@@ -1,10 +1,10 @@
 import pandas as pd
 
 def aggregate_daily_data(data):
-    # Ensure the 'Data' column is in datetime format
+    # Transformarea coloanei Data în format datetime
     data['Data'] = pd.to_datetime(data['Data'], dayfirst=True)
 
-    # Convert relevant columns to numeric, coercing errors to NaN
+    # Convertirea coloanelor relevante la tipuri numerice de date
     columns_to_convert = [
         'Consum[MW]', 'Productie[MW]', 'Carbune[MW]', 'Hidrocarburi[MW]',
         'Ape[MW]', 'Nuclear[MW]', 'Eolian[MW]', 'Foto[MW]', 'Biomasa[MW]'
@@ -12,7 +12,7 @@ def aggregate_daily_data(data):
     for column in columns_to_convert:
         data[column] = pd.to_numeric(data[column], errors='coerce')
 
-    # Group by date and aggregate the features
+    # Gruparea pe zile și agregarea 
     daily_data = data.groupby(data['Data'].dt.date).agg({
         'Consum[MW]': 'sum',
         'Productie[MW]': 'sum',
@@ -25,22 +25,22 @@ def aggregate_daily_data(data):
         'Biomasa[MW]': 'sum'
     }).reset_index()
 
-    # Recalculate 'Sold[MW]' as the difference between 'Productie[MW]' and 'Consum[MW]'
+    # Recalculare 'Sold[MW]' ca diferența dintre 'Productie[MW]' și 'Consum[MW]'
     daily_data['Sold[MW]'] = daily_data['Productie[MW]'] - daily_data['Consum[MW]']
 
     return daily_data
 
-# Load the datasets
+# Încărcarea dataset-urilor
 data_2022 = pd.read_excel('data/Grafic_SEN_2022.xlsx')
 data_2023 = pd.read_excel('data/Grafic_SEN_2023.xlsx')
 
-# Combine the datasets
+# Combinarea seturilor de date
 combined_data = pd.concat([data_2022, data_2023], ignore_index=True)
 
-# Aggregate the data
+# Agregarea datelor
 daily_data = aggregate_daily_data(combined_data)
 
-# Save the aggregated data to a new CSV file
+# Salvare date agregate într-un nou fișier CSV
 daily_data.to_csv('data/daily_data.csv', index=False)
 
 print("Aggregated data saved successfully.")
