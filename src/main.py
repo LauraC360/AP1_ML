@@ -151,3 +151,11 @@ if __name__ == "__main__":
 
     df['ID3'] = [rmse, mae, accuracy]
     df.to_csv(comparison_results_path)
+
+    # Salvarea predicțiilor într-un fișier CSV
+    results = pd.DataFrame({
+        'Real': y_test,
+        'Regressor_Predicted': regressor_predictions,
+        'Classifier_Predicted': classifier_predictions
+    })
+    results.to_csv('data/predictions_december_2024.csv', index=False)

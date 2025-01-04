@@ -124,7 +124,7 @@ def evaluate_model(model, X_test, y_test, comparison_results_path):
 
     # Salvarea predicțiilor într-un fișier CSV
     results = pd.DataFrame({'Real': y_test, 'Predicted_Bayes': predictions})
-    results.to_csv('data/predictions_december_2024.csv', index=False)
+    results.to_csv('data/predictions_bayes_december_2024.csv', index=False)
 
 if __name__ == "__main__":
     # Definirea căilor pentru fișiere
