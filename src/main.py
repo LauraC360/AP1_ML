@@ -9,7 +9,7 @@ import graphviz
 def preprocess_data(train_file_path, test_file_path):
     train_data = pd.read_csv(train_file_path)
 
-    # Converse dată la formatul datetime
+    # Conversie dată la formatul datetime
     train_data['Data'] = pd.to_datetime(train_data['Data'], format='%Y-%m-%d', dayfirst=True)
     train_data = train_data.dropna() # Eliminare date lipsă
 
